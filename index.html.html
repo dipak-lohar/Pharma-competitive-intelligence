@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmaIQ — Intelligent Research Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #111720;
+    --surface2: #1a2333;
+    --border: #1e2d42;
+    --accent: #00d4ff;
+    --accent2: #7b61ff;
+    --accent3: #00ff9d;
+    --text: #e8f0fe;
+    --text-muted: #6b8099;
+    --danger: #ff4d6d;
+    --warning: #ffb347;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orb-float 8s ease-in-out infinite;
+  }
+  .orb-1 { width: 400px; height: 400px; background: rgba(0,212,255,0.07); top: -100px; right: -100px; animation-delay: 0s; }
+  .orb-2 { width: 300px; height: 300px; background: rgba(123,97,255,0.07); bottom: 100px; left: -80px; animation-delay: -3s; }
+  .orb-3 { width: 200px; height: 200px; background: rgba(0,255,157,0.05); top: 50%; left: 50%; animation-delay: -5s; }
+
+  @keyframes orb-float {
+    0%, 100% { transform: translate(0, 0); }
+    33% { transform: translate(20px, -20px); }
+    66% { transform: translate(-15px, 15px); }
+  }
+
+  /* Layout */
+  .app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  header {
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,14,20,0.8);
+    backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .header-badges {
+    display: flex;
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge-live { background: rgba(0,255,157,0.1); color: var(--accent3); border: 1px solid rgba(0,255,157,0.2); }
+  .badge-sources { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+
+  /* Main */
+  main { flex: 1; display: flex; flex-direction: column; }
+
+  /* Hero */
+  .hero {
+    padding: 60px 40px 40px;
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fade-up 0.6s ease forwards 0.2s;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fade-up 0.6s ease forwards 0.4s;
+  }
+
+  .hero-title em {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.7;
+    opacity: 0;
+    animation: fade-up 0.6s ease forwards 0.6s;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Source pills */
+  .sources-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 20px 40px;
+    opacity: 0;
+    animation: fade-up 0.6s ease forwards 0.8s;
+  }
+
+  .source-pill {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface);
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+
+  .source-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .source-pill.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  /* Query Box */
+  .query-section {
+    padding: 0 40px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    opacity: 0;
+    animation: fade-up 0.6s ease forwards 1s;
+  }
+
+  .query-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .query-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,212,255,0.2), 0 0 40px rgba(0,212,255,0.05);
+  }
+
+  .query-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--text);
+    resize: none;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  .query-textarea::placeholder { color: var(--text-muted); }
+
+  .query-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  /* Output format selector */
+  .format-selector {
+    display: flex;
+    gap: 6px;
+  }
+
+  .format-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .format-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .format-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  .format-btn .icon { font-size: 13px; }
+
+  /* Submit button */
+  .submit-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,255,0.3); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Example queries */
+  .examples {
+    padding: 0 40px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .examples-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .examples-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .example-chip {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+
+  .example-chip:hover {
+    border-color: var(--accent2);
+    color: var(--text);
+    background: rgba(123,97,255,0.08);
+  }
+
+  /* Results section */
+  .results-section {
+    padding: 0 40px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    display: none;
+  }
+
+  .results-section.visible { display: block; }
+
+  /* Loading state */
+  .loading-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 60px 0;
+    text-align: center;
+  }
+
+  .loading-state.visible { display: flex; }
+
+  .loading-ring {
+    width: 48px; height: 48px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .loading-step {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 16px;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+
+  .loading-step.done { color: var(--accent3); border-color: rgba(0,255,157,0.2); }
+  .loading-step.active { color: var(--accent); border-color: rgba(0,212,255,0.3); }
+
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Result card */
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .result-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .result-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .result-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  /* Tab navigation */
+  .result-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    overflow-x: auto;
+  }
+
+  .result-tab {
+    padding: 14px 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .result-tab:hover { color: var(--text); }
+  .result-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-content { padding: 28px; display: none; }
+  .tab-content.active { display: block; }
+
+  /* Report content */
+  .report-body {
+    line-height: 1.8;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .report-body h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 24px 0 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-body h2:first-child { margin-top: 0; }
+
+  .report-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 16px 0 6px;
+  }
+
+  .report-body p { margin-bottom: 12px; }
+
+  .report-body ul {
+    margin: 8px 0 12px 20px;
+  }
+
+  .report-body ul li {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+  }
+
+  .report-body strong { color: var(--text); }
+
+  .report-body .highlight {
+    background: rgba(0,212,255,0.08);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  /* Sources list */
+  .sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .source-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    transition: all 0.2s;
+  }
+
+  .source-item:hover { border-color: var(--accent); }
+
+  .source-rank {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .source-info { flex: 1; min-width: 0; }
+  .source-title { font-size: 13px; color: var(--text); margin-bottom: 4px; font-weight: 400; }
+  .source-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 10px; }
+  .source-score { font-size: 11px; color: var(--accent3); }
+
+  /* Download buttons */
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .download-card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .download-card:hover {
+    border-color: var(--accent2);
+    background: rgba(123,97,255,0.08);
+    transform: translateY(-2px);
+  }
+
+  .download-icon { font-size: 28px; }
+  .download-label { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; }
+  .download-desc { font-size: 11px; color: var(--text-muted); }
+
+  /* Error state */
+  .error-state {
+    display: none;
+    padding: 24px;
+    border: 1px solid rgba(255,77,109,0.3);
+    border-radius: 12px;
+    background: rgba(255,77,109,0.05);
+    color: var(--danger);
+    font-size: 13px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .error-state.visible { display: flex; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    header { padding: 16px 20px; }
+    .hero { padding: 40px 20px 24px; }
+    .query-section, .sources-row, .examples, .results-section { padding-left: 20px; padding-right: 20px; }
+    .format-selector { flex-wrap: wrap; }
+    .header-badges { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🔬</div>
+      <div class="logo-text">Pharma<span>IQ</span></div>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-live">● Live</span>
+      <span class="badge badge-sources">6 Sources</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="hero-eyebrow">AI-Powered Research Intelligence</div>
+      <h1 class="hero-title">Ask anything about<br><em>pharma & drug research</em></h1>
+      <p class="hero-sub">Powered by PubMed · FDA · ClinicalTrials · EMA · NewsAPI · Wikipedia<br>Get instant reports, summaries, and downloadable documents.</p>
+    </div>
+
+    <div class="sources-row">
+      <span class="source-pill active">PubMed</span>
+      <span class="source-pill active">FDA</span>
+      <span class="source-pill active">ClinicalTrials.gov</span>
+      <span class="source-pill active">EMA</span>
+      <span class="source-pill active">NewsAPI</span>
+      <span class="source-pill active">Wikipedia</span>
+    </div>
+
+    <div class="query-section">
+      <div class="query-box">
+        <textarea
+          id="queryInput"
+          class="query-textarea"
+          placeholder="Ask anything... e.g. What are the latest FDA drug approvals for cancer treatment in 2026?"
+          rows="4"
+        ></textarea>
+        <div class="query-footer">
+          <div class="format-selector">
+            <button class="format-btn active" data-format="report" onclick="selectFormat(this)">
+              <span class="icon">📄</span> Report
+            </button>
+            <button class="format-btn" data-format="summary" onclick="selectFormat(this)">
+              <span class="icon">💬</span> Summary
+            </button>
+            <button class="format-btn" data-format="bullets" onclick="selectFormat(this)">
+              <span class="icon">📋</span> Bullets
+            </button>
+            <button class="format-btn" data-format="ppt" onclick="selectFormat(this)">
+              <span class="icon">📊</span> PowerPoint
+            </button>
+            <button class="format-btn" data-format="doc" onclick="selectFormat(this)">
+              <span class="icon">📝</span> Document
+            </button>
+          </div>
+          <button class="submit-btn" id="submitBtn" onclick="submitQuery()">
+            <span>Analyze</span> <span>→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="examples">
+      <div class="examples-label">Try an example</div>
+      <div class="examples-grid">
+        <span class="example-chip" onclick="setExample(this)">Latest FDA drug approvals 2026</span>
+        <span class="example-chip" onclick="setExample(this)">COVID-19 antiviral clinical trials</span>
+        <span class="example-chip" onclick="setExample(this)">Cancer immunotherapy breakthroughs</span>
+        <span class="example-chip" onclick="setExample(this)">Alzheimer's disease new treatments</span>
+        <span class="example-chip" onclick="setExample(this)">Drug safety recalls 2026</span>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="results-section" id="loadingSection">
+      <div class="loading-state visible" id="loadingState">
+        <div class="loading-ring"></div>
+        <div class="loading-steps" id="loadingSteps">
+          <div class="loading-step active" id="step1"><div class="step-dot"></div> Fetching from PubMed, FDA, ClinicalTrials...</div>
+          <div class="loading-step" id="step2"><div class="step-dot"></div> Merging & scoring sources...</div>
+          <div class="loading-step" id="step3"><div class="step-dot"></div> AI analysis via Groq...</div>
+          <div class="loading-step" id="step4"><div class="step-dot"></div> Generating report...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-section" id="resultsSection">
+
+      <div class="error-state" id="errorState">
+        <span>⚠️</span>
+        <div>
+          <strong>Request failed.</strong><br>
+          <span id="errorMsg">Could not connect to the research pipeline. Please try again.</span>
+        </div>
+      </div>
+
+      <div id="resultCard" style="display:none">
+        <div class="result-header">
+          <div class="result-title" id="resultTitle">Research Report</div>
+          <div class="result-meta">
+            <span class="result-badge" style="background:rgba(0,255,157,0.1);color:var(--accent3);border:1px solid rgba(0,255,157,0.2)" id="resultFormat">REPORT</span>
+            <span style="font-size:11px;color:var(--text-muted)" id="resultTime"></span>
+          </div>
+        </div>
+
+        <div class="result-content">
+          <div class="result-tabs">
+            <button class="result-tab active" onclick="switchTab('response', this)">📄 Response</button>
+            <button class="result-tab" onclick="switchTab('sources', this)">🔗 Sources</button>
+            <button class="result-tab" onclick="switchTab('download', this)">⬇ Download</button>
+          </div>
+
+          <div class="tab-content active" id="tab-response">
+            <div class="report-body" id="reportBody"></div>
+          </div>
+
+          <div class="tab-content" id="tab-sources">
+            <div class="sources-list" id="sourcesList"></div>
+          </div>
+
+          <div class="tab-content" id="tab-download">
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Download your research in your preferred format:</p>
+            <div class="download-grid">
+              <div class="download-card" onclick="downloadAs('pdf')">
+                <div class="download-icon">📄</div>
+                <div class="download-label">PDF Report</div>
+                <div class="download-desc">Full formatted report</div>
+              </div>
+              <div class="download-card" onclick="downloadAs('doc')">
+                <div class="download-icon">📝</div>
+                <div class="download-label">Word Document</div>
+                <div class="download-desc">.docx editable file</div>
+              </div>
+              <div class="download-card" onclick="downloadAs('ppt')">
+                <div class="download-icon">📊</div>
+                <div class="download-label">PowerPoint</div>
+                <div class="download-desc">Presentation slides</div>
+              </div>
+              <div class="download-card" onclick="downloadAs('txt')">
+                <div class="download-icon">📋</div>
+                <div class="download-label">Plain Text</div>
+                <div class="download-desc">Simple text format</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ⚙️ CONFIG — Replace with your actual n8n webhook URL
+  const WEBHOOK_URL = 'https://dipaklohar.app.n8n.cloud/webhook/query';
+
+  let selectedFormat = 'report';
+  let lastResponse = null;
+  let lastQuery = '';
+
+  function selectFormat(btn) {
+    document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFormat = btn.dataset.format;
+  }
+
+  function setExample(el) {
+    document.getElementById('queryInput').value = el.textContent;
+    document.getElementById('queryInput').focus();
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  async function animateLoadingSteps() {
+    const steps = ['step1', 'step2', 'step3', 'step4'];
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(r => setTimeout(r, 1200));
+      if (i > 0) {
+        document.getElementById(steps[i-1]).classList.remove('active');
+        document.getElementById(steps[i-1]).classList.add('done');
+        document.getElementById(steps[i-1]).querySelector('.step-dot').textContent = '✓';
+      }
+      if (i < steps.length) {
+        document.getElementById(steps[i]).classList.add('active');
+      }
+    }
+  }
+
+  async function submitQuery() {
+    const query = document.getElementById('queryInput').value.trim();
+    if (!query) {
+      document.getElementById('queryInput').focus();
+      return;
+    }
+
+    lastQuery = query;
+
+    // Reset UI
+    document.getElementById('errorState').classList.remove('visible');
+    document.getElementById('resultCard').style.display = 'none';
+    document.querySelectorAll('.loading-step').forEach(s => {
+      s.classList.remove('active', 'done');
+      const dot = s.querySelector('.step-dot');
+      if (dot) dot.textContent = '';
+    });
+    document.getElementById('step1').classList.add('active');
+
+    // Show loading
+    document.getElementById('loadingSection').classList.add('visible');
+    document.getElementById('resultsSection').classList.add('visible');
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Analyzing...</span>';
+
+    animateLoadingSteps();
+
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query,
+          format: selectedFormat
+        })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      lastResponse = data;
+      renderResult(data, elapsed);
+
+    } catch (err) {
+      document.getElementById('loadingSection').classList.remove('visible');
+      document.getElementById('errorState').classList.add('visible');
+      document.getElementById('errorMsg').textContent = err.message || 'Connection failed. Check your webhook URL.';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>Analyze</span> <span>→</span>';
+      document.getElementById('loadingSection').classList.remove('visible');
+    }
+  }
+
+  function renderResult(data, elapsed) {
+    // Extract content — adjust these keys to match your n8n output
+    const content = data.report || data.analysis || data.response || data.output || data.message || JSON.stringify(data, null, 2);
+    const sources = data.sources || data.items || [];
+
+    // Format labels
+    const formatLabels = { report: 'REPORT', summary: 'SUMMARY', bullets: 'BULLETS', ppt: 'POWERPOINT', doc: 'DOCUMENT' };
+
+    document.getElementById('resultTitle').textContent = lastQuery.length > 60 ? lastQuery.substring(0, 60) + '...' : lastQuery;
+    document.getElementById('resultFormat').textContent = formatLabels[selectedFormat] || 'REPORT';
+    document.getElementById('resultTime').textContent = `${elapsed}s · ${new Date().toLocaleTimeString()}`;
+
+    // Render report body
+    document.getElementById('reportBody').innerHTML = formatContent(content, selectedFormat);
+
+    // Render sources
+    renderSources(sources);
+
+    document.getElementById('loadingSection').classList.remove('visible');
+    document.getElementById('resultCard').style.display = 'block';
+  }
+
+  function formatContent(content, format) {
+    if (format === 'bullets') {
+      // Convert to bullet list
+      const lines = content.split('\n').filter(l => l.trim());
+      return '<ul>' + lines.map(l => `<li>${l.replace(/^[-*•]\s*/, '')}</li>`).join('') + '</ul>';
+    }
+
+    // Convert markdown-like text to HTML
+    let html = content
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/^(?!<[hul])(.+)$/gm, '$1');
+
+    // Wrap highlighted blocks
+    html = html.replace(/> (.+)/g, '<div class="highlight">$1</div>');
+
+    return `<p>${html}</p>`;
+  }
+
+  function renderSources(sources) {
+    const list = document.getElementById('sourcesList');
+    if (!sources || sources.length === 0) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No source data returned.</p>';
+      return;
+    }
+
+    list.innerHTML = sources.slice(0, 10).map((s, i) => `
+      <div class="source-item">
+        <div class="source-rank">${i + 1}</div>
+        <div class="source-info">
+          <div class="source-title">${s.title || s.name || 'Source ' + (i+1)}</div>
+          <div class="source-meta">
+            <span>${s.source || s.url || ''}</span>
+            ${s.date ? `<span>${s.date}</span>` : ''}
+            ${s.score ? `<span class="source-score">Score: ${s.score}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function downloadAs(type) {
+    if (!lastResponse) return;
+
+    const content = lastResponse.report || lastResponse.analysis || lastResponse.response || JSON.stringify(lastResponse, null, 2);
+    const query = lastQuery || 'pharma-research';
+    const filename = query.substring(0, 30).replace(/\s+/g, '-').toLowerCase();
+
+    if (type === 'txt') {
+      const blob = new Blob([content], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${filename}.txt`;
+      a.click();
+    } else if (type === 'pdf') {
+      // Open print dialog for PDF
+      const w = window.open('', '_blank');
+      w.document.write(`<html><head><title>${query}</title><style>body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto;line-height:1.6}</style></head><body><h1>${query}</h1><div>${content.replace(/\n/g,'<br>')}</div></body></html>`);
+      w.document.close();
+      w.print();
+    } else {
+      alert(`📩 To generate .${type} files, connect a document generation node in your n8n workflow and return a download URL.`);
+    }
+  }
+
+  // Enter key to submit
+  document.getElementById('queryInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitQuery();
+  });
+</script>
+</body>
+</html>
